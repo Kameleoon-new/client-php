@@ -8,7 +8,7 @@ class KameleoonException extends Exception
 {
     private const KAMELEOON_SDK = "Kameleoon SDK: ";
 
-    public function __construct($message, $code = 0, Exception $previous = null)
+    public function __construct($message, $code = 0, ?Exception $previous = null)
     {
         parent::__construct(self::KAMELEOON_SDK . $message, $code, $previous);
     }

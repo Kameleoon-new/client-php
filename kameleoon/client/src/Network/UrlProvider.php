@@ -26,7 +26,8 @@ class UrlProvider
 
     private bool $isCustomDomain = false;
     private string $siteCode;
-    private string $postQueryBase;
+    private string $sdkSiteCodeQueryBase;
+    private string $trackingQueryBase;
 
     protected string $dataApiDomain = UrlProvider::DEFAULT_DATA_API_DOMAIN;
     private string $eventsDomain = UrlProvider::DEFAULT_EVENTS_DOMAIN;
@@ -36,7 +37,10 @@ class UrlProvider
     public function __construct(string $siteCode, ?string $networkDomain = null)
     {
         $this->siteCode = $siteCode;
-        $this->postQueryBase = $this->makeTrackingQueryBase();
+        $queryBuilder = $this->makeSdkSiteCodeQueryBase();
+        $this->sdkSiteCodeQueryBase = (string)$queryBuilder;
+        $queryBuilder->append(new QueryParam(QueryParams::BODY_UA, "true"));
+        $this->trackingQueryBase = (string)$queryBuilder;
         $this->updateDomains($networkDomain);
     }
 
@@ -90,19 +94,18 @@ class UrlProvider
         }
     }
 
-    private function makeTrackingQueryBase(): string
+    private function makeSdkSiteCodeQueryBase(): QueryBuilder
     {
-        return (string)new QueryBuilder(
+        return new QueryBuilder(
             new QueryParam(QueryParams::SDK_NAME, SdkVersion::getName()),
             new QueryParam(QueryParams::SDK_VERSION, SdkVersion::getVersion()),
             new QueryParam(QueryParams::SITE_CODE, $this->siteCode),
-            new QueryParam(QueryParams::BODY_UA, "true", false),
         );
     }
 
     public function makeTrackingUrl(): string
     {
-        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::TRACKING_PATH, $this->postQueryBase);
+        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::TRACKING_PATH, $this->trackingQueryBase);
     }
 
     public function makeExperimentRegisterDebugParams(): ?string
@@ -192,6 +195,6 @@ class UrlProvider
 
     public function makeAccessTokenUrl(): string
     {
-        return sprintf(self::ACCESS_TOKEN_URL_FORMAT, $this->accessTokenDomain);
+        return sprintf(self::ACCESS_TOKEN_URL_FORMAT, $this->accessTokenDomain) . '?' . $this->sdkSiteCodeQueryBase;
     }
 }

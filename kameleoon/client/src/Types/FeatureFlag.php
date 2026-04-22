@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kameleoon\Types;
 
+use Kameleoon\Configuration\FeatureFlag as InternalFeatureFlag;
 use Kameleoon\Helpers\StringHelper;
 
 class FeatureFlag
@@ -45,6 +46,26 @@ class FeatureFlag
         $this->isEnvironmentEnabled = $isEnvironmentEnabled;
         $this->rules = $rules;
         $this->defaultVariationKey = $defaultVariationKey;
+    }
+
+    public static function buildFromInternal(InternalFeatureFlag $featureFlag): self
+    {
+        $variations = [];
+        foreach ($featureFlag->getVariations() as $variation) {
+            $variations[$variation->key] = Variation::buildFromInternal($variation);
+        }
+
+        $rules = [];
+        foreach ($featureFlag->rules as $rule) {
+            $rules[] = Rule::buildFromInternal($rule, $variations);
+        }
+
+        return new self(
+            $variations,
+            $featureFlag->getEnvironmentEnabled(),
+            $rules,
+            $featureFlag->defaultVariationKey
+        );
     }
 
     public function getDefaultVariation(): ?Variation

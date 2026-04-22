@@ -9,10 +9,12 @@ use Kameleoon\Exception\FeatureEnvironmentDisabled;
 use Kameleoon\Exception\FeatureNotFound;
 use Kameleoon\Logging\KameleoonLogger;
 use Kameleoon\Targeting\TargetingSegment;
+use Throwable;
 
 class DataFile
 {
     private ?string $lastModified;
+    private int $dateModified;
     private array $featureFlags;
     private array $meGroups;
     private Settings $settings;
@@ -30,9 +32,13 @@ class DataFile
     public function __construct(object $jsonDataFile, ?string $environment = null)
     {
         KameleoonLogger::debug(
-            "CALL: new DataFile(jsonDataFile: %s, environment: '%s')", $jsonDataFile, $environment);
+            "CALL: new DataFile(jsonDataFile: %s, environment: '%s')",
+            $jsonDataFile,
+            $environment
+        );
         $this->environment = $environment;
         $this->lastModified = self::readLastModified($jsonDataFile);
+        $this->dateModified = self::readDateModified($jsonDataFile);
         [$this->segments, $this->audienceTrackingSegments] = self::parseSegments($jsonDataFile);
         $this->customDataInfo = new CustomDataInfo($jsonDataFile->customData ?? null);
         $this->featureFlags = self::parseFeatureFlags($jsonDataFile, $this->segments, $this->customDataInfo);
@@ -40,12 +46,20 @@ class DataFile
         $this->settings = new Settings($jsonDataFile);
         $this->holdout = is_object($jsonDataFile->holdout ?? null) ? new Experiment($jsonDataFile->holdout) : null;
         KameleoonLogger::debug(
-            "RETURN: new DataFile(jsonDataFile: %s, environment: '%s')", $jsonDataFile, $environment);
+            "RETURN: new DataFile(jsonDataFile: %s, environment: '%s')",
+            $jsonDataFile,
+            $environment
+        );
     }
 
     public function getLastModified(): ?string
     {
         return $this->lastModified;
+    }
+
+    public function getDateModified(): int
+    {
+        return $this->dateModified;
     }
 
     public function &getSegments(): array
@@ -98,8 +112,11 @@ class DataFile
             $this->featureFlagById = $this->collectFeatureFlagById();
         }
         $featureFlag = $this->featureFlagById[$featureFlagId] ?? null;
-        KameleoonLogger::debug("RETURN: DataFile->getFeatureFlagById(featureFlagId: %s) -> (featureFlag: %s)",
-            $featureFlagId, $featureFlag);
+        KameleoonLogger::debug(
+            "RETURN: DataFile->getFeatureFlagById(featureFlagId: %s) -> (featureFlag: %s)",
+            $featureFlagId,
+            $featureFlag
+        );
         return $featureFlag;
     }
 
@@ -110,8 +127,11 @@ class DataFile
             $this->ruleInfoByExpId = $this->collectRuleInfoByExpId();
         }
         $ruleInfo = $this->ruleInfoByExpId[$experimentId] ?? null;
-        KameleoonLogger::debug("RETURN: DataFile->getRuleInfoByExpId(experimentId: %s) -> (ruleInfo: %s)",
-            $experimentId, $ruleInfo);
+        KameleoonLogger::debug(
+            "RETURN: DataFile->getRuleInfoByExpId(experimentId: %s) -> (ruleInfo: %s)",
+            $experimentId,
+            $ruleInfo
+        );
         return $ruleInfo;
     }
 
@@ -122,8 +142,11 @@ class DataFile
             $this->variationById = $this->collectVariationById();
         }
         $variation = $this->variationById[$variationId] ?? null;
-        KameleoonLogger::debug("RETURN: DataFile->getVariation(variationId: %s) -> (featureFlag: %s)",
-            $variationId, $variation);
+        KameleoonLogger::debug(
+            "RETURN: DataFile->getVariation(variationId: %s) -> (featureFlag: %s)",
+            $variationId,
+            $variation
+        );
         return $variation;
     }
 
@@ -139,6 +162,12 @@ class DataFile
     {
         $lastModified = $json->phpsdk_datafile_lastmod ?? null;
         return is_string($lastModified) ? $lastModified : null;
+    }
+
+    private static function readDateModified($json): int
+    {
+        $dateModified = $json->dateModified ?? null;
+        return is_numeric($dateModified) ? (int) $dateModified : 0;
     }
 
     private static function parseSegments($json): array
@@ -170,7 +199,7 @@ class DataFile
             foreach ($json->featureFlags as $obj) {
                 $ffs[$obj->featureKey] = new FeatureFlag($obj, $segments, $cdi);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             KameleoonLogger::error("Failed to parse feature flags in configuration: " . $e->getMessage());
             return [];
         }
@@ -184,13 +213,17 @@ class DataFile
         if ($featureFlag === null) {
             throw new FeatureNotFound("Feature {$featureKey} not found");
         }
-        if (!$featureFlag->getEnvironmentEnabled()) {
-            $environment = $this->environment ?? 'default';
-            throw new FeatureEnvironmentDisabled("Feature '{$featureKey}' is disabled for {$environment} environment");
-        }
         KameleoonLogger::debug("RETURN: DataFile->getFeatureFlag(featureKey: '%s') -> (featureFlag: %s)",
             $featureKey, $featureFlag);
         return $featureFlag;
+    }
+
+    public function ensureEnvironmentEnabled(FeatureFlag $featureFlag): void
+    {
+        if (!$featureFlag->getEnvironmentEnabled()) {
+            $environment = $this->environment ?? 'default';
+            throw new FeatureEnvironmentDisabled("Feature '{$featureFlag->featureKey}' is disabled for {$environment} environment");
+        }
     }
 
     private static function makeMEGroups(array $featureFlags): array

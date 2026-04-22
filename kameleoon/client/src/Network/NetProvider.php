@@ -7,6 +7,7 @@ namespace Kameleoon\Network;
 interface NetProvider
 {
     public function callSync(SyncRequest $request, bool $readHeaders = false): Response;
+
     // There is no async request in PHP SDK. This type of requests will be be performed with background daemon.
     public function callAsync(AsyncRequest $request): string;
 
@@ -63,12 +64,13 @@ abstract class Request
     public bool $isJwtRequired;
 
     public function __construct(
-        string $httpMethod,
-        string $url,
-        ?array $headers,
-        bool $isJwtRequired = false,
+        string  $httpMethod,
+        string  $url,
+        ?array  $headers,
+        bool    $isJwtRequired = false,
         ?string $body = null
-    ) {
+    )
+    {
         $this->httpMethod = $httpMethod;
         $this->url = $url;
         $this->headers = $headers;
@@ -86,17 +88,22 @@ abstract class Request
         }
         $body = 'null';
         if ($this->body !== null) {
-            if (is_string($this->body) && strpos($this->body, 'grant_type=client_credentials') === 0) {
-                $body = '****';
-            } else {
-                $body = $this->body;
-            }
+            $body = $this->body;
         }
 
+        $parts = [];
+
+        foreach (($this->headers ?? []) as $name => $value) {
+            if ($name === 'Authorization') {
+                $value = '***';
+            }
+
+            $parts[] = $name . ':' . $value;
+        }
         return "Request{" .
             "Method:'" . $this->httpMethod .
             "',Url:'" . $this->url .
-            "',Headers:{" . $headers .
+            "',Headers:{" . implode(',', $parts) .
             "},Body:'" . $body .
             "'}";
     }
@@ -108,14 +115,15 @@ class SyncRequest extends Request
     public int $responseContentType;
 
     public function __construct(
-        string $httpMethod,
-        string $url,
-        ?array $headers,
-        ?int $timeout,
-        int $responseContentType,
-        bool $isJwtRequired = false,
+        string  $httpMethod,
+        string  $url,
+        ?array  $headers,
+        ?int    $timeout,
+        int     $responseContentType,
+        bool    $isJwtRequired = false,
         ?string $body = null
-    ) {
+    )
+    {
         parent::__construct($httpMethod, $url, $headers, $isJwtRequired, $body);
         $this->timeout = $timeout;
         $this->responseContentType = $responseContentType;

@@ -18,9 +18,11 @@ class NetProviderImpl implements NetProvider
     private string $kameleoonWorkDir;
     private int $asyncRequestBodySizeLimit;
 
-    public function __construct(string $siteCode, string $kameleoonWorkDir,
-        int $asyncRequestBodySizeLimit = self::ASYNC_REQUEST_BODY_SIZE_LIMIT)
-    {
+    public function __construct(
+        string $siteCode,
+        string $kameleoonWorkDir,
+        int $asyncRequestBodySizeLimit = self::ASYNC_REQUEST_BODY_SIZE_LIMIT
+    ) {
         $this->siteCode = $siteCode;
         $this->kameleoonWorkDir = $kameleoonWorkDir;
         $this->asyncRequestBodySizeLimit = $asyncRequestBodySizeLimit;
@@ -59,7 +61,8 @@ class NetProviderImpl implements NetProvider
         $responseHeaders = [];
         if ($readHeaders) {
             curl_setopt(
-                $ch, CURLOPT_HEADERFUNCTION,
+                $ch,
+                CURLOPT_HEADERFUNCTION,
                 function ($ch, $headerLine) use (&$responseHeaders) {
                     $length = strlen($headerLine);
                     $headerParts = explode(":", $headerLine, 2);
@@ -86,7 +89,9 @@ class NetProviderImpl implements NetProvider
         } else {
             $response = new Response($err, null, null, []);
         }
-        curl_close($ch);
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($ch);
+        }
         return $response;
     }
 
@@ -118,7 +123,8 @@ class NetProviderImpl implements NetProvider
         if ($failureFile !== null) {
             KameleoonLogger::error(
                 "Failed to write asynchronous request '%s' to file '%s'",
-                $request->url, $failureFile,
+                $request->url,
+                $failureFile,
             );
         }
         return $pathBase;

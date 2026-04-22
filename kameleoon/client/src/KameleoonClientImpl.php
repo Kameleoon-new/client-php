@@ -44,7 +44,6 @@ use Kameleoon\Network\NetworkManagerFactory;
 use Kameleoon\Network\NetworkManagerFactoryImpl;
 use Kameleoon\Targeting\TargetingManager;
 use Kameleoon\Targeting\TargetingManagerImpl;
-use Kameleoon\Types\Variable;
 use Kameleoon\Types\RemoteVisitorDataFilter;
 
 class KameleoonClientImpl implements KameleoonClient
@@ -357,9 +356,6 @@ class KameleoonClientImpl implements KameleoonClient
         $this->loadConfiguration($timeout);
         $variations = array();
         foreach ($this->dataManager->getDataFile()->getFeatureFlags() as $featureFlag) {
-            if (!$featureFlag->getEnvironmentEnabled()) {
-                continue;
-            }
             try {
                 [$variationKey, $evalExp] = $this->getVariationInfo($visitorCode, $featureFlag, $track);
             } catch (FeatureEnvironmentDisabled $ex) {
@@ -427,6 +423,9 @@ class KameleoonClientImpl implements KameleoonClient
             $save,
         );
         $forcedVariation = ($visitor !== null) ? $visitor->getForcedFeatureVariation($featureFlag->featureKey) : null;
+        if ($forcedVariation === null || !$forcedVariation->isSimulated()) {
+            $this->dataManager->getDataFile()->ensureEnvironmentEnabled($featureFlag);
+        }
         if ($forcedVariation !== null) {
             $evalExp = EvaluatedExperiment::fromForcedVariation($forcedVariation);
         } elseif (
@@ -544,18 +543,10 @@ class KameleoonClientImpl implements KameleoonClient
             $variation,
             $evalExp,
         );
-        $extVariables = array();
-        if ($variation !== null) {
-            foreach ($variation->variables as $variable) {
-                $extVariables[$variable->key] = new Variable($variable->key, $variable->type, $variable->getValue());
-            }
-        }
-        $extVariation = new Types\Variation(
-            ($variation !== null) ? $variation->key : null,
+        $extVariation = Types\Variation::buildFromInternal(
+            $variation,
             ($evalExp !== null) ? $evalExp->getVarByExp()->variationId : null,
-            ($evalExp !== null) ? $evalExp->getExperiment()->id : null,
-            $extVariables,
-            ($variation !== null) ? $variation->name : ''
+            ($evalExp !== null) ? $evalExp->getExperiment()->id : null
         );
         KameleoonLogger::debug(
             "RETURN: KameleoonClientImpl::createExternalVariation(variation: %s, evalExp: %s) -> (extVariation: %s)",
@@ -682,6 +673,7 @@ class KameleoonClientImpl implements KameleoonClient
         );
         $this->loadConfiguration($timeout);
         $featureFlag = $this->dataManager->getDataFile()->getFeatureFlag($featureKey);
+        $this->dataManager->getDataFile()->ensureEnvironmentEnabled($featureFlag);
         $variation = $featureFlag->getVariation($variationKey);
         if (is_null($variation)) {
             throw new FeatureVariationNotFound("Variation key {$variationKey} not found");
@@ -698,8 +690,14 @@ class KameleoonClientImpl implements KameleoonClient
         return $variables;
     }
 
+    /**
+     * @deprecated Please use `getDataFile` instead.
+     */
     public function getFeatureList(?int $timeout = null): array
     {
+        KameleoonLogger::info(
+            "Call of deprecated method 'getFeatureList'. Please, use 'getDataFile' instead."
+        );
         KameleoonLogger::info("CALL: KameleoonClientImpl->getFeatureList(timeout: %s)", $timeout);
         $this->loadConfiguration($timeout);
         $features = array_keys($this->dataManager->getDataFile()->getFeatureFlags());
@@ -729,9 +727,6 @@ class KameleoonClientImpl implements KameleoonClient
         $this->loadConfiguration($timeout);
         $visitor = $this->visitorManager->getVisitor($visitorCode);
         foreach ($this->dataManager->getDataFile()->getFeatureFlags() as $featureFlag) {
-            if (!$featureFlag->getEnvironmentEnabled()) {
-                continue;
-            }
             try {
                 $evalExp = $this->evaluate($visitor, $visitorCode, $featureFlag, false, false);
             } catch (FeatureEnvironmentDisabled $ex) {
@@ -771,9 +766,6 @@ class KameleoonClientImpl implements KameleoonClient
         $this->loadConfiguration($timeout);
         $visitor = $this->visitorManager->getVisitor($visitorCode);
         foreach ($this->dataManager->getDataFile()->getFeatureFlags() as $featureFlag) {
-            if (!$featureFlag->getEnvironmentEnabled()) {
-                continue;
-            }
             try {
                 $evalExp = $this->evaluate($visitor, $visitorCode, $featureFlag, false, false);
             } catch (FeatureEnvironmentDisabled $ex) {
@@ -1416,39 +1408,7 @@ class KameleoonClientImpl implements KameleoonClient
     {
         KameleoonLogger::info("CALL: KameleoonClientImpl->getDataFile()");
         $this->loadConfiguration($timeout);
-        $featureFlags = [];
-        foreach ($this->dataManager->getDataFile()->getFeatureFlags() as $featureKey => $internalFeatureFlag) {
-            // Collect variations
-            $variations = [];
-            foreach ($internalFeatureFlag->getVariations() as $variation) {
-                $variations[$variation->key] = self::createExternalVariation($variation, null);
-            }
-            // Collect rules
-            $rules = [];
-            foreach ($internalFeatureFlag->rules as $internalRule) {
-                $ruleVars = [];
-                foreach ($internalRule->experiment->variationsByExposition as $varByExp) {
-                    $variation = $variations[$varByExp->variationKey] ?? null;
-                    if ($variation !== null) {
-                        $ruleVars[$variation->key] = new Types\Variation(
-                            $variation->key,
-                            $varByExp->variationId,
-                            $internalRule->experiment->id,
-                            $variation->variables,
-                            $variation->name
-                        );
-                    }
-                }
-                $rules[] = new Types\Rule($ruleVars);
-            }
-            $featureFlags[$featureKey] = new Types\FeatureFlag(
-                $variations,
-                $internalFeatureFlag->getEnvironmentEnabled(),
-                $rules,
-                $internalFeatureFlag->defaultVariationKey
-            );
-        }
-        $dataFile = new Types\DataFile($featureFlags);
+        $dataFile = $this->dataManager->getExternalDataFile();
         KameleoonLogger::info("RETURN: KameleoonClientImpl->getDataFile() -> (dataFile: %s)", $dataFile);
         return $dataFile;
     }

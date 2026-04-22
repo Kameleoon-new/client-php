@@ -16,7 +16,7 @@ interface NetworkManager
     public function getAccessTokenSource(): AccessTokenSource;
 
     // Automation API
-    public function fetchAccessJWToken(string $clientId, string $clientSecret, ?int $timeout = null): ?object;
+    public function fetchAccessJWToken(string $basicAuthToken, ?int $timeout = null): ?object;
 
     // SDK config API
     public function fetchConfiguration(?int $timeout = null, ?string $ifModifiedSince = null): ?FetchedConfiguration;

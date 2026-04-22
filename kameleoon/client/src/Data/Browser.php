@@ -59,7 +59,10 @@ class Browser extends Sendable implements Data
         return (string)$qb;
     }
 
-    public function __toString(): string {
-        return "Browser{browserType:" . $this->browserType . ",version:" . $this->version . "}";
+    public function __toString(): string
+    {
+        $version = is_nan($this->version) ? 'NaN' : $this->version;
+
+        return "Browser{browserType:" . $this->browserType . ",version:" . $version . "}";
     }
 }

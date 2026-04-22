@@ -26,8 +26,8 @@ class Geolocation extends Sendable implements Data
         ?string $city = null,
         ?string $postalCode = null,
         float $latitude = NAN,
-        float $longitude = NAN)
-    {
+        float $longitude = NAN
+    ) {
         $this->country = $country;
         $this->region = $region;
         $this->city = $city;
@@ -86,8 +86,11 @@ class Geolocation extends Sendable implements Data
 
     public function __toString(): string
     {
+        $latitude = is_nan($this->latitude) ? 'NaN' : $this->latitude;
+        $longitude = is_nan($this->longitude) ? 'NaN' : $this->longitude;
+
         return "Geolocation{country:'" . $this->country . "',region:'" . $this->region . "',city:'" .
-            $this->city . "',postalCode:'" . $this->postalCode . "',latitude:" . $this->latitude . ",longitude:" .
-            $this->longitude . "}";
+            $this->city . "',postalCode:'" . $this->postalCode . "',latitude:" . $latitude . ",longitude:" .
+            $longitude . "}";
     }
 }

@@ -170,6 +170,9 @@ interface KameleoonClient
      */
     public function getFeatureVariationVariables(string $featureKey, string $variationKey, ?int $timeout = null): array;
 
+    /**
+     * @deprecated Please use `getDataFile` instead.
+     */
     public function getFeatureList(?int $timeout = null): array;
 
     /**

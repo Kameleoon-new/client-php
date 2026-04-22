@@ -204,14 +204,14 @@ class NetworkManagerImpl implements NetworkManager
         return $response !== null;
     }
 
-    public function fetchAccessJWToken(string $clientId, string $clientSecret, ?int $timeout = null): ?object
+    public function fetchAccessJWToken(string $basicAuthToken, ?int $timeout = null): ?object
     {
         $url = $this->urlProvider->makeAccessTokenUrl();
-        $data = $this->formAccessJWTTokenCall($clientId, $clientSecret);
+        $data = $this->formAccessJWTTokenCall();
         $request = new SyncRequest(
             Request::POST,
             $url,
-            [self::H_CONTENT_TYPE_NAME => self::H_CONTENT_TYPE_VALUE],
+            [self::H_CONTENT_TYPE_NAME => self::H_CONTENT_TYPE_VALUE, self::H_AUTHORIZATION => $basicAuthToken],
             $timeout,
             ResponseContentType::JSON,
             false,
@@ -221,12 +221,10 @@ class NetworkManagerImpl implements NetworkManager
         return ($response !== null) ? $response->body : null;
     }
 
-    private function formAccessJWTTokenCall(string $clientId, string $clientSecret): string
+    private function formAccessJWTTokenCall(): string
     {
         return (string)new QueryBuilder(
-            new QueryParam(QueryParams::GRANT_TYPE, self::GRANT_TYPE),
-            new QueryParam(QueryParams::CLIENT_ID, $clientId),
-            new QueryParam(QueryParams::CLIENT_SECRET, $clientSecret)
+            new QueryParam(QueryParams::GRANT_TYPE, self::GRANT_TYPE)
         );
     }
 }

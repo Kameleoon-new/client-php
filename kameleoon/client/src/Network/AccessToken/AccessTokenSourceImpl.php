@@ -17,6 +17,7 @@ class AccessTokenSourceImpl implements AccessTokenSource
     const JWT_EXPIRES_AT_FIELD = "expires_at";
     const SILENT_AFTER_FETCH_FAILURE_UNTIL_FIELD = "silentAfterFetchFailureUntil";
     const ACCESS_TOKEN_FILE = "access_token.json";
+    const BASIC_AUTHORIZATION_PREFIX = "Basic ";
 
     private string $clientId;
     private string $clientSecret;
@@ -24,6 +25,7 @@ class AccessTokenSourceImpl implements AccessTokenSource
     private NetworkManager $networkManager;
 
     private ?string $cachedToken;
+    private ?string $basicAuthToken;
 
     public function __construct(
         string $clientId,
@@ -39,10 +41,17 @@ class AccessTokenSourceImpl implements AccessTokenSource
         $this->clientSecret = $clientSecret;
         $this->accessTokenFilePath = $kameleoonWorkDir . self::ACCESS_TOKEN_FILE;
         $this->networkManager = $networkManager;
+        $this->basicAuthToken = $this->constructBasicToken($clientId, $clientSecret);
         KameleoonLogger::debug(function () use ($clientId, $clientSecret, $kameleoonWorkDir) {
             return sprintf("RETURN: new AccessTokenSourceImpl(clientId: '%s', clientSecret: '%s', kameleoonWorkDir: '%s')",
                 StringHelper::secret($clientId), StringHelper::secret($clientSecret), $kameleoonWorkDir);
         });
+    }
+
+    public static function constructBasicToken(string $clientId, string $clientSecret): string
+    {
+        $basicTokenContent = $clientId . ':' . $clientSecret;
+        return self::BASIC_AUTHORIZATION_PREFIX . base64_encode($basicTokenContent);
     }
 
     public function getClientId(): string
@@ -95,7 +104,7 @@ class AccessTokenSourceImpl implements AccessTokenSource
             [$token, $silentAfterFetchFailure] = self::loadToken(stream_get_contents($fp));
             if (($token === null) && !$silentAfterFetchFailure) {
                 $tokenResponse =
-                    $this->networkManager->fetchAccessJWToken($this->clientId, $this->clientSecret, $timeout);
+                    $this->networkManager->fetchAccessJWToken($this->basicAuthToken, $timeout);
                 if ($tokenResponse !== null) {
                     self::saveToken($fp, $tokenResponse);
                     $token = $tokenResponse->{self::JWT_ACCESS_TOKEN_FIELD};

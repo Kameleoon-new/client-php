@@ -23,8 +23,8 @@ class FeatureFlag
         $bucketingCustomDataId = $ff->bucketingCustomDataId ?? null;
         $this->bucketingCustomDataIndex = ($bucketingCustomDataId !== null)
             ? $cdi->getCustomDataIndexById($bucketingCustomDataId) : null;
-        $this->variations = array_map(fn ($var) => new Variation($var), $ff->variations);
-        $this->rules = array_map(fn ($rule) => new Rule($rule, $segments), $ff->rules);
+        $this->variations = array_map(fn($var) => new Variation($var), $ff->variations);
+        $this->rules = array_map(fn($rule) => new Rule($rule, $segments), $ff->rules);
     }
 
     public function getEnvironmentEnabled(): bool

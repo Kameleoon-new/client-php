@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.21.0 - 2026-04-22
+### Features
+* Refactored code to ensure compatibility with [PHP 8.5](https://www.php.net/ChangeLog-8.php#8.5.5)
+* Added support for variation simulation when feature flags are **inactive (OFF state)** across the following methods:
+  - [`getVariation`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getvariation)
+  - [`getVariations`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getvariations)
+  - [`isFeatureActive`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#isfeatureactive)
+  - This support is also extended to the following **deprecated methods**:
+    - [`getActiveFeatureListForVisitor`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getactivefeaturelistforvisitor)
+    - [`getActiveFeatures`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getactivefeatures)
+    - [`getFeatureVariationKey`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getfeaturevariationkey)
+    - [`getFeatureVariable`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getfeaturevariable)
+* Improved the performance of the [`getDataFile()`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getdatafile) method. It now returns a cached [`DataFile`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#datafile) instance that is refreshed whenever the SDK configuration is updated.
+* Added a new `dateModified` property to the [`DataFile`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#datafile) object returned by the [`getDataFile`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getdatafile) method.
+* The [`getFeatureList`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#getfeaturelist) method has been deprecated in favor of `getDataFile()`.
+
 ## 4.20.0 - 2026-02-13
 ### Features
 * Introduced support for the Kameleoon [`ApplicationVersion`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#applicationversion) data type, allowing the visitor’s application version to be set and used in targeting evaluation.
