@@ -6,6 +6,7 @@ namespace Kameleoon\Data\Manager;
 
 use Kameleoon\Configuration\Rule;
 use Kameleoon\Data\BaseData;
+use Kameleoon\Helpers\TimeHelper;
 use Kameleoon\Network\QueryBuilder;
 use Kameleoon\Network\QueryParam;
 use Kameleoon\Network\QueryParams;
@@ -22,18 +23,18 @@ class AssignedVariation extends Sendable implements BaseData
 
     private int $experimentId;
     private int $variationId;
-    private ?int $assignmentDate;
+    private int $assignmentDateMillis;
     private int $ruleType;
 
     public function __construct(
         int $experimentId,
         int $variationId,
         int $ruleType = AssignedVariation::RULE_TYPE_UNKNOWN,
-        ?int $assignmentDate = null
+        ?int $assignmentDateMillis = null
     ) {
         $this->experimentId = $experimentId;
         $this->variationId = $variationId;
-        $this->assignmentDate = $assignmentDate;
+        $this->assignmentDateMillis = $assignmentDateMillis ?? TimeHelper::nowInMilliseconds();
         $this->ruleType = $ruleType;
     }
 
@@ -54,12 +55,12 @@ class AssignedVariation extends Sendable implements BaseData
 
     public function isValid(?int $respoolTime): bool
     {
-        return ($respoolTime == null) || (($this->assignmentDate ?? 0) >= $respoolTime);
+        return ($respoolTime == null) || ($this->assignmentDateMillis >= $respoolTime);
     }
 
-    public function getAssignmentDate(): ?int
+    public function getAssignmentDateMillis(): int
     {
-        return $this->assignmentDate;
+        return $this->assignmentDateMillis;
     }
 
     public function getQuery(): string
@@ -72,11 +73,12 @@ class AssignedVariation extends Sendable implements BaseData
         );
     }
 
-    public function __toString(): string {
+    public function __toString(): string
+    {
         return "AssignedVariation{" .
             "experimentId:" . $this->experimentId .
             ",variationId:" . $this->variationId .
-            ",assignmentDate:" . $this->assignmentDate .
+            ",assignmentDateMillis:" . $this->assignmentDateMillis .
             ",ruleType:" . $this->ruleType .
             "}";
     }

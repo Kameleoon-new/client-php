@@ -6,7 +6,7 @@ namespace Kameleoon\Targeting\Condition;
 
 use Kameleoon\Configuration\DataFile;
 
-class TargetFeatureFlagCondition extends TargetingCondition
+class TargetFeatureFlagCondition extends VisitorScopeCondition
 {
     const TYPE = "TARGET_FEATURE_FLAG";
 
@@ -16,7 +16,7 @@ class TargetFeatureFlagCondition extends TargetingCondition
 
     public function __construct($conditionData)
     {
-        parent::__construct($conditionData);
+        parent::__construct($conditionData, VisitorScopeCondition::VISIT_SCOPE_CURRENT_VISIT);
         $this->featureFlagId = intval($conditionData->featureFlagId ?? "-1");
         $this->conditionVariationKey = $conditionData->variationKey ?? null;
         $this->conditionRuleId = intval($conditionData->ruleId ?? null);
@@ -27,25 +27,25 @@ class TargetFeatureFlagCondition extends TargetingCondition
         if (!is_array($data)) {
             return false;
         }
-        $dataFile = $data[0] ?? null;
-        $variations = $data[1] ?? [];
-        if (($dataFile == null) || (count($variations) == 0)) {
+        $dataFile = $data["dataFile"] ?? null;
+        if ($dataFile === null) {
             return false;
         }
+        $variations = $data["variations"] ?? [];
+        $assignmentThreshold = $this->getAssignmentThresholdMillis($data["visitorVisits"] ?? null);
         foreach ($this->getRules($dataFile) as $rule) {
-            if (($rule == null) || ($rule->experiment->id == null)) {
+            if ($rule === null || $rule->experiment->id === null) {
                 continue;
             }
             $assignedVariation = $variations[$rule->experiment->id] ?? null;
-            if ($assignedVariation == null) {
+            if ($assignedVariation === null || $assignedVariation->getAssignmentDateMillis() < $assignmentThreshold) {
                 continue;
             }
-            $variationId = $assignedVariation->getVariationId();
-            if ($this->conditionVariationKey == null) {
+            if ($this->conditionVariationKey === null) {
                 return true;
             }
-            $variation = $dataFile->getVariation($variationId);
-            if (($variation != null) && ($variation->variationKey === $this->conditionVariationKey)) {
+            $variation = $dataFile->getVariation($assignedVariation->getVariationId());
+            if ($variation !== null && $variation->variationKey === $this->conditionVariationKey) {
                 return true;
             }
         }

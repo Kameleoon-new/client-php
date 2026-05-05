@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.22.0 - 2026-05-05
+### Features
+* Added support for **during the current visit** and **during any of the last visits** settings across the following targeting conditions:
+  - Converted Goal
+  - Feature Flag
+  - Web Experiment
+  - Personalization
+  - Exclusive Campaign
+
 ## 4.21.0 - 2026-04-22
 ### Features
 * Refactored code to ensure compatibility with [PHP 8.5](https://www.php.net/ChangeLog-8.php#8.5.5)

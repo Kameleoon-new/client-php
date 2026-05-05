@@ -189,7 +189,8 @@ class RemoteVisitorData
             $goalId = $data->goalId ?? 0;
             $revenue = $data->revenue ?? 0.0;
             $negative = $data->negative ?? false;
-            $conversion = new Conversion($goalId, $revenue, $negative);
+            $ts = $conversionEvent->time ?? 0;
+            $conversion = Conversion::createWithAssignmentDateMillis($goalId, $revenue, $negative, null, $ts);
             array_push($this->conversions, $conversion);
         }
     }
@@ -268,7 +269,8 @@ class RemoteVisitorData
             $id = $data->id ?? 0;
             if (!array_key_exists($id, $this->personalizations)) {
                 $varId = $data->variationId ?? 0;
-                $this->personalizations[$id] = new Personalization($id, $varId);
+                $ts = $personalizationEvent->time ?? 0;
+                $this->personalizations[$id] = new Personalization($id, $varId, $ts);
             }
         }
     }

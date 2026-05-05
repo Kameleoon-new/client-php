@@ -3,6 +3,7 @@
 namespace Kameleoon\Data;
 
 use Kameleoon\Helpers\StringHelper;
+use Kameleoon\Helpers\TimeHelper;
 use Kameleoon\Helpers\URLEncoding;
 use Kameleoon\Network\QueryBuilder;
 use Kameleoon\Network\QueryParam;
@@ -17,6 +18,7 @@ class Conversion extends Sendable implements Data
     private float $revenue;
     private bool $negative;
     private ?array $metadata;
+    private int $assignmentDateMillis;
 
     /**
      * @param int $goalId ID of the goal. This field is mandatory.
@@ -25,12 +27,30 @@ class Conversion extends Sendable implements Data
      * This field is optional (`false` by default).
      * @param ?array<CustomData> $metadata Metadata of the conversion. This field is optional (`null` by default).
      */
-    public function __construct(int $goalId, float $revenue = 0, bool $negative = false, ?array $metadata = null)
-    {
+    public function __construct(
+        int $goalId,
+        float $revenue = 0,
+        bool $negative = false,
+        ?array $metadata = null
+    ) {
         $this->goalId = $goalId;
         $this->revenue = $revenue;
         $this->negative = $negative;
         $this->metadata = $metadata;
+        $this->assignmentDateMillis = TimeHelper::nowInMilliseconds();
+    }
+
+    /** @internal */
+    public static function createWithAssignmentDateMillis(
+        int $goalId,
+        float $revenue,
+        bool $negative,
+        ?array $metadata,
+        int $assignmentDateMillis
+    ): self {
+        $conversion = new self($goalId, $revenue, $negative, $metadata);
+        $conversion->assignmentDateMillis = $assignmentDateMillis;
+        return $conversion;
     }
 
     public function getGoalId(): int
@@ -51,6 +71,12 @@ class Conversion extends Sendable implements Data
     public function &getMetadata(): ?array
     {
         return $this->metadata;
+    }
+
+    /** @internal */
+    public function getAssignmentDateMillis(): int
+    {
+        return $this->assignmentDateMillis;
     }
 
     /** @internal */
@@ -113,6 +139,7 @@ class Conversion extends Sendable implements Data
             ",revenue:" . $this->revenue .
             ",negative:" . ($this->negative ? 'true' : 'false') .
             ",metadata:" . StringHelper::objectToString($this->metadata) .
+            ",assignmentDateMillis:" . $this->assignmentDateMillis .
             "}";
     }
 }

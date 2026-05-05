@@ -6,7 +6,7 @@ namespace Kameleoon\Targeting\Condition;
 
 use Kameleoon\Logging\KameleoonLogger;
 
-class ExclusiveExperimentCondition extends TargetingCondition
+class ExclusiveExperimentCondition extends VisitorScopeCondition
 {
     private const CAMPAIGN_TYPE_EXPERIMENT = "EXPERIMENT";
     private const CAMPAIGN_TYPE_PERSONALIZATION = "PERSONALIZATION";
@@ -18,7 +18,7 @@ class ExclusiveExperimentCondition extends TargetingCondition
 
     public function __construct($conditionData)
     {
-        parent::__construct($conditionData);
+        parent::__construct($conditionData, VisitorScopeCondition::VISIT_SCOPE_VISITOR);
         $this->campaignType = $conditionData->campaignType ?? null;
     }
 
@@ -27,32 +27,48 @@ class ExclusiveExperimentCondition extends TargetingCondition
         if (!is_array($data)) {
             return false;
         }
-        $currentExperimentId = $data[0] ?? -1;
-        $variations = $data[1] ?? [];
-        $personalizations = $data[2] ?? [];
+        $assignmentThreshold = $this->getAssignmentThresholdMillis($data["visitorVisits"] ?? null);
+        $currentExperimentId = $data["currentExperimentId"] ?? -1;
+        $variations = $data["variations"] ?? [];
+        $personalizations = $data["personalizations"] ?? [];
         switch ($this->campaignType) {
             case self::CAMPAIGN_TYPE_EXPERIMENT:
-                return self::checkExperiment($currentExperimentId, $variations);
+                return self::checkExperiment($currentExperimentId, $variations, $assignmentThreshold);
             case self::CAMPAIGN_TYPE_PERSONALIZATION:
-                return self::checkPersonalization($personalizations);
+                return self::checkPersonalization($personalizations, $assignmentThreshold);
             case self::CAMPAIGN_TYPE_ANY:
-                return self::checkPersonalization($personalizations)
-                    && self::checkExperiment($currentExperimentId, $variations);
+                return self::checkExperiment($currentExperimentId, $variations, $assignmentThreshold)
+                    && self::checkPersonalization($personalizations, $assignmentThreshold);
+            default:
+                break;
         }
         KameleoonLogger::error(
-            "Unexpected campaign type for 'ExclusiveExperimentCondition' condition: '%s'", $this->campaignType
+            "Unexpected campaign type for 'ExclusiveExperimentCondition' condition: '%s'",
+            $this->campaignType
         );
         return false;
     }
 
-    private static function checkExperiment(int $currentExperimentId, array $variations): bool
+    private static function checkExperiment(int $currentExperimentId, array $variations, int $assignmentThreshold): bool
     {
-        return (count($variations) == 0) ||
-            ((count($variations) == 1) && array_key_exists($currentExperimentId, $variations));
+        foreach ($variations as $variation) {
+            if (
+                $variation->getExperimentId() !== $currentExperimentId
+                && $variation->getAssignmentDateMillis() >= $assignmentThreshold
+            ) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    private static function checkPersonalization(array $personalizations): bool
+    private static function checkPersonalization(array $personalizations, int $assignmentThreshold): bool
     {
-        return count($personalizations) == 0;
+        foreach ($personalizations as $personalization) {
+            if ($personalization->getAssignmentDateMillis() >= $assignmentThreshold) {
+                return false;
+            }
+        }
+        return true;
     }
 }

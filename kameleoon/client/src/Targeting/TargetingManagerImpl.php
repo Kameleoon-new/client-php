@@ -50,7 +50,9 @@ class TargetingManagerImpl implements TargetingManager
     {
         KameleoonLogger::debug(
             "CALL: TargetingManager.checkTargeting(visitorCode: '%s', containerID: %s, segment: %s)",
-            $visitorCode, $containerID, $segment
+            $visitorCode,
+            $containerID,
+            $segment
         );
         $targeting = true;
 
@@ -70,7 +72,11 @@ class TargetingManagerImpl implements TargetingManager
         }
         KameleoonLogger::debug(
             "RETURN: TargetingManager.checkTargeting(visitorCode: '%s', containerID: %s, segment: %s)" .
-            " -> (targeted: %s)", $visitorCode, $containerID, $segment, $targeting
+                " -> (targeted: %s)",
+            $visitorCode,
+            $containerID,
+            $segment,
+            $targeting
         );
         return $targeting;
     }
@@ -107,30 +113,53 @@ class TargetingManagerImpl implements TargetingManager
                 $conditionData = !is_null($visitor) ? $visitor->getBrowser() : null;
                 break;
             case ConversionCondition::TYPE:
-                $conditionData = !is_null($visitor) ? $visitor->getConversions() : null;
+                if ($visitor !== null) {
+                    $conditionData = [
+                        "visitorVisits" => $visitor->getVisitorVisits(),
+                        "conversions" => $visitor->getConversions(),
+                    ];
+                }
                 break;
             case VisitorCodeCondition::TYPE:
                 $conditionData = $visitorCode;
                 break;
             case TargetFeatureFlagCondition::TYPE:
-                $conditionData = [
-                    $this->dataManager->getDataFile(),
-                    ($visitor != null) ? $visitor->getAssignedVariations() : []
-                ];
+                if ($visitor != null) {
+                    $conditionData = [
+                        "visitorVisits" => $visitor->getVisitorVisits(),
+                        "dataFile" => $this->dataManager->getDataFile(),
+                        "variations" => $visitor->getAssignedVariations(),
+                    ];
+                }
                 break;
             case TargetExperimentCondition::TYPE:
-                $conditionData = ($visitor != null) ? $visitor->getAssignedVariations() : [];
+                if ($visitor !== null) {
+                    $conditionData = [
+                        "visitorVisits" => $visitor->getVisitorVisits(),
+                        "variations"    => $visitor->getAssignedVariations(),
+                    ];
+                }
                 break;
             case TargetPersonalizationCondition::TYPE:
-                $conditionData = ($visitor != null) ? $visitor->getPersonalizations() : [];
+                if ($visitor !== null) {
+                    $conditionData = [
+                        "visitorVisits"    => $visitor->getVisitorVisits(),
+                        "personalizations" => $visitor->getPersonalizations(),
+                    ];
+                }
                 break;
             case ExclusiveExperimentCondition::TYPE:
                 if ($campaignId !== null) {
-                    $conditionData = [
-                        $campaignId,
-                        ($visitor != null) ? $visitor->getAssignedVariations() : [],
-                        ($visitor != null) ? $visitor->getPersonalizations() : []
-                    ];
+                    if (!is_null($visitor)) {
+                        $conditionData = [
+                            "visitorVisits"      => $visitor->getVisitorVisits(),
+                            "currentExperimentId" => $campaignId,
+                            "variations"         => $visitor->getAssignedVariations(),
+                            "personalizations"   => $visitor->getPersonalizations(),
+                        ];
+                    } else {
+                        $conditionData = [];
+                    }
                 }
                 break;
             case SdkLanguageCondition::TYPE:
@@ -171,7 +200,11 @@ class TargetingManagerImpl implements TargetingManager
 
         KameleoonLogger::debug(
             "CALL: TargetingManager.getConditionData(type: '%s', visitorCode: '%s', campaignId: %s)" .
-            " -> (conditionData: %s)", $type, $visitorCode, $campaignId, $conditionData
+                " -> (conditionData: %s)",
+            $type,
+            $visitorCode,
+            $campaignId,
+            $conditionData
         );
         return $conditionData;
     }
