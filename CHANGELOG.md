@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.23.0 - 2026-05-20
+### Features
+* Added new [`requestBodySizeLimitBytes`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#additional-configuration) (`request_body_size_limit_bytes`) configuration parameter to control the request body file size limit.
+
 ## 4.22.0 - 2026-05-05
 ### Features
 * Added support for **during the current visit** and **during any of the last visits** settings across the following targeting conditions:

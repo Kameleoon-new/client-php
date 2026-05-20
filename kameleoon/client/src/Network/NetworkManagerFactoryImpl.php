@@ -8,6 +8,14 @@ use Kameleoon\Network\AccessToken\AccessTokenSourceFactory;
 
 class NetworkManagerFactoryImpl implements NetworkManagerFactory
 {
+    private int $asyncRequestBodySizeLimit;
+
+    public function __construct(
+        int $asyncRequestBodySizeLimit = NetProviderImpl::ASYNC_REQUEST_BODY_SIZE_LIMIT
+    ) {
+        $this->asyncRequestBodySizeLimit = $asyncRequestBodySizeLimit;
+    }
+
     public function create(
         string $siteCode,
         ?string $environment,
@@ -17,7 +25,7 @@ class NetworkManagerFactoryImpl implements NetworkManagerFactory
         ?string $networkDomain
     ): NetworkManager {
         $urlProvider = new UrlProvider($siteCode, $networkDomain);
-        $netProvider = new NetProviderImpl($siteCode, $kameleoonWorkDir);
+        $netProvider = new NetProviderImpl($siteCode, $kameleoonWorkDir, $this->asyncRequestBodySizeLimit);
         return new NetworkManagerImpl(
             $urlProvider,
             $environment,

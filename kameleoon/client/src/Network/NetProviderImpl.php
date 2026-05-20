@@ -28,6 +28,11 @@ class NetProviderImpl implements NetProvider
         $this->asyncRequestBodySizeLimit = $asyncRequestBodySizeLimit;
     }
 
+    public function getAsyncRequestBodySizeLimit(): int
+    {
+        return $this->asyncRequestBodySizeLimit;
+    }
+
     private static function getContent($body, int $responseContentType)
     {
         switch ($responseContentType) {

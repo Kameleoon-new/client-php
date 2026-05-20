@@ -15,6 +15,7 @@ class KameleoonClientConfig
     const DEFAULT_TIMEOUT_MILLISECONDS = 10_000;
     const SECONDS_IN_MINUTE = 60;
     const DEFAULT_REFRESH_INTERVAL_MINUTES = 60;
+    const REQUEST_BODY_SIZE_LIMIT = 2560 * 1024; // 2.5 * 1024^2 bytes
 
     private string $clientId;
     private string $clientSecret;
@@ -25,6 +26,7 @@ class KameleoonClientConfig
     private CookieOptions $cookieOptions;
     private ?string $environment;
     private ?string $networkDomain;
+    private int $requestBodySizeLimitBytes;
 
     public function __construct(
         string $clientId,
@@ -35,7 +37,8 @@ class KameleoonClientConfig
         bool $debugMode = false,
         ?CookieOptions $cookieOptions = null,
         ?string $environment = null,
-        ?string $networkDomain = null
+        ?string $networkDomain = null,
+        int $requestBodySizeLimitBytes = self::REQUEST_BODY_SIZE_LIMIT
     ) {
         if (empty($clientId)) {
             throw new ConfigCredentialsInvalid("Client ID is not specified or empty");
@@ -58,6 +61,19 @@ class KameleoonClientConfig
             $defaultTimeoutMillisecond = self::DEFAULT_TIMEOUT_MILLISECONDS;
         }
         $this->defaultTimeoutMillisecond = $defaultTimeoutMillisecond;
+        if (
+            $requestBodySizeLimitBytes <= 0
+            || $requestBodySizeLimitBytes > self::REQUEST_BODY_SIZE_LIMIT
+        ) {
+            KameleoonLogger::warning(
+                "Request body size limit is invalid. It must be greater than 0 and less than or equal "
+                    . "to %s bytes. Default value (%s bytes) is applied.",
+                self::REQUEST_BODY_SIZE_LIMIT,
+                self::REQUEST_BODY_SIZE_LIMIT
+            );
+            $requestBodySizeLimitBytes = self::REQUEST_BODY_SIZE_LIMIT;
+        }
+        $this->requestBodySizeLimitBytes = $requestBodySizeLimitBytes;
         $this->debugMode = $debugMode;
         if ($cookieOptions == null || empty($cookieOptions->getTopLevelDomain())) {
             KameleoonLogger::warning("Setting parameter 'topLevelDomain' (top_level_domain) is strictly "
@@ -122,6 +138,11 @@ class KameleoonClientConfig
         return $this->networkDomain;
     }
 
+    public function getRequestBodySizeLimitBytes(): int
+    {
+        return $this->requestBodySizeLimitBytes;
+    }
+
     public static function readFromFile(string $filePath)
     {
         $kameleoonConfigJson = array();
@@ -138,7 +159,8 @@ class KameleoonClientConfig
             $kameleoonConfigJson["debug_mode"] ?? false,
             CookieOptions::readFromArray($kameleoonConfigJson["cookie_options"] ?? null),
             $kameleoonConfigJson["environment"] ?? null,
-            $kameleoonConfigJson["network_domain"] ?? null
+            $kameleoonConfigJson["network_domain"] ?? null,
+            $kameleoonConfigJson["request_body_size_limit_bytes"] ?? self::REQUEST_BODY_SIZE_LIMIT
         );
     }
 
@@ -154,11 +176,13 @@ class KameleoonClientConfig
     public function __toString()
     {
         return sprintf(
-            "KameleoonClientConfig{kameleoonWorkDir:'%s',refreshInterval:%s,defaultTimeout:%s,environment:'%s',
-                clientId:'%s',clientSecret:'%s',networkDomain:'%s',cookieOptions:%s}",
+            "KameleoonClientConfig{kameleoonWorkDir:'%s',refreshInterval:%s,defaultTimeout:%s,
+                requestBodySizeLimitBytes:%s,environment:'%s', clientId:'%s',clientSecret:'%s',
+                networkDomain:'%s',cookieOptions:%s}",
             $this->kameleoonWorkDir,
             $this->refreshIntervalSecond,
             $this->defaultTimeoutMillisecond,
+            $this->requestBodySizeLimitBytes,
             $this->environment,
             StringHelper::secret($this->clientId),
             StringHelper::secret($this->clientSecret),

@@ -102,7 +102,9 @@ class KameleoonClientImpl implements KameleoonClient
             );
         }
 
-        $networkManagerFactory = $networkManagerFactory ?? new NetworkManagerFactoryImpl();
+        $networkManagerFactory = $networkManagerFactory ?? new NetworkManagerFactoryImpl(
+            $this->clientConfig->getRequestBodySizeLimitBytes()
+        );
         $this->networkManager = $networkManagerFactory->create(
             $siteCode,
             $this->clientConfig->getEnvironment(),
