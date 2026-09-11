@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kameleoon\Network;
 
+use Kameleoon\Helpers\StringHelper;
+
 interface NetProvider
 {
     public function callSync(SyncRequest $request, bool $readHeaders = false): Response;
@@ -102,7 +104,7 @@ abstract class Request
 
         foreach (($this->headers ?? []) as $name => $value) {
             if ($name === 'Authorization') {
-                $value = '***';
+                $value = StringHelper::secret($value);
             }
 
             $parts[] = $name . ':' . $value;

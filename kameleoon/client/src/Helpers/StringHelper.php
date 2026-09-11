@@ -83,8 +83,7 @@ class StringHelper
             return str_repeat(self::$hidCh, $length);
         }
 
-        $hiddenLength = max($length - self::$visCount, self::$visCount);
-
-        return substr($secret, 0, $length - $hiddenLength) . str_repeat(self::$hidCh, $hiddenLength);
+        $visibleFrom = max($length - self::$visCount, self::$visCount);
+        return str_repeat(self::$hidCh, self::$visCount) . substr($secret, $visibleFrom);
     }
 }

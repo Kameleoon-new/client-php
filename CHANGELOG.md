@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.24.1 - 2026-09-11
+### Bug fixes
+* The access token is now renewed 5 minutes before its expiration, so that requests sent by the cron job are no longer rejected with a token that expires while they wait to be sent.
+
 ## 4.24.0 - 2026-08-27
 ### Features
 * Added new [`setEventHandler`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#seteventhandler) method for subscribing to SDK events:
