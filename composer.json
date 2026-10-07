@@ -23,5 +23,9 @@
     "classmap": [
       "tests/"
     ]
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5",
+    "phpstan/phpstan": "^2.2"
   }
 }

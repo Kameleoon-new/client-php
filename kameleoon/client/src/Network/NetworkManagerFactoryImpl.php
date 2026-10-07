@@ -5,33 +5,29 @@ declare(strict_types=1);
 namespace Kameleoon\Network;
 
 use Kameleoon\Events\EventManager;
+use Kameleoon\KameleoonClientConfig;
 use Kameleoon\Network\AccessToken\AccessTokenSourceFactory;
 
 class NetworkManagerFactoryImpl implements NetworkManagerFactory
 {
-    private int $asyncRequestBodySizeLimit;
-
-    public function __construct(
-        int $asyncRequestBodySizeLimit = NetProviderImpl::ASYNC_REQUEST_BODY_SIZE_LIMIT
-    ) {
-        $this->asyncRequestBodySizeLimit = $asyncRequestBodySizeLimit;
-    }
-
     public function create(
         string $siteCode,
-        ?string $environment,
-        int $defaultTimeout,
+        KameleoonClientConfig $clientConfig,
         string $kameleoonWorkDir,
         AccessTokenSourceFactory $accessTokenSourceFactory,
-        ?string $networkDomain,
         EventManager $eventManager
     ): NetworkManager {
-        $urlProvider = new UrlProvider($siteCode, $networkDomain);
-        $netProvider = new NetProviderImpl($siteCode, $kameleoonWorkDir, $this->asyncRequestBodySizeLimit);
+        $urlProvider = new UrlProvider($siteCode, $clientConfig->getNetworkDomain());
+        $netProvider = new NetProviderImpl(
+            $siteCode,
+            $kameleoonWorkDir,
+            $clientConfig->getRequestBodySizeLimitBytes(),
+            $clientConfig->getProxy()
+        );
         return new NetworkManagerImpl(
             $urlProvider,
-            $environment,
-            $defaultTimeout,
+            $clientConfig->getEnvironment(),
+            $clientConfig->getDefaultTimeoutMillisecond(),
             $netProvider,
             $accessTokenSourceFactory,
             $eventManager

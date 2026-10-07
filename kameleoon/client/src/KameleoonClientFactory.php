@@ -6,7 +6,6 @@ namespace Kameleoon;
 
 use Kameleoon\Hybrid\HybridManagerImpl;
 use Kameleoon\Logging\KameleoonLogger;
-use Kameleoon\Network\NetworkManagerFactoryImpl;
 
 class KameleoonClientFactory
 {
@@ -40,11 +39,7 @@ class KameleoonClientFactory
         KameleoonLogger::info("CALL: KameleoonClientFactory->createWithConfig(siteCode: '%s', config: %s)",
             $siteCode, $kameleoonConfig);
         if (!in_array($siteCode, self::getInstance()->clients)) {
-            self::getInstance()->clients[$siteCode] = new KameleoonClientImpl(
-                $siteCode,
-                $kameleoonConfig,
-                new NetworkManagerFactoryImpl()
-            );
+            self::getInstance()->clients[$siteCode] = new KameleoonClientImpl($siteCode, $kameleoonConfig);
         }
         $client = self::getInstance()->clients[$siteCode];
         KameleoonLogger::info("RETURN: KameleoonClientFactory->create(siteCode: '%s', config: %s) -> (client)",

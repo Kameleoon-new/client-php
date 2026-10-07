@@ -17,20 +17,28 @@ class NetProviderImpl implements NetProvider
     private string $siteCode;
     private string $kameleoonWorkDir;
     private int $asyncRequestBodySizeLimit;
+    private ?string $proxy;
 
     public function __construct(
         string $siteCode,
         string $kameleoonWorkDir,
-        int $asyncRequestBodySizeLimit = self::ASYNC_REQUEST_BODY_SIZE_LIMIT
+        int $asyncRequestBodySizeLimit = self::ASYNC_REQUEST_BODY_SIZE_LIMIT,
+        ?string $proxy = null
     ) {
         $this->siteCode = $siteCode;
         $this->kameleoonWorkDir = $kameleoonWorkDir;
         $this->asyncRequestBodySizeLimit = $asyncRequestBodySizeLimit;
+        $this->proxy = $proxy;
     }
 
     public function getAsyncRequestBodySizeLimit(): int
     {
         return $this->asyncRequestBodySizeLimit;
+    }
+
+    public function getProxy(): ?string
+    {
+        return $this->proxy;
     }
 
     private static function getContent($body, int $responseContentType)
@@ -52,6 +60,9 @@ class NetProviderImpl implements NetProvider
         curl_setopt($ch, CURLOPT_URL, $request->url);
         curl_setopt($ch, CURLOPT_TIMEOUT_MS, $request->timeout);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        if ($this->proxy !== null) {
+            curl_setopt($ch, CURLOPT_PROXY, $this->proxy);
+        }
         if (!empty($request->headers)) {
             $headers = [];
             foreach ($request->headers as $headerName => $headerValue) {
@@ -109,6 +120,9 @@ class NetProviderImpl implements NetProvider
         $bodyPath = $pathBase . ".dat";
         // Generate request
         $requestText = "curl -s -S -L --tlsv1.2 --tls-max 1.2 -X POST";
+        if ($this->proxy !== null) {
+            $requestText .= " --proxy " . escapeshellarg($this->proxy);
+        }
         if ($request->headers !== null) {
             foreach ($request->headers as $headerName => $headerValue) {
                 $requestText .= sprintf(' -H "%s: %s"', $headerName, $headerValue);

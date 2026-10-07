@@ -111,20 +111,16 @@ class KameleoonClientImpl implements KameleoonClient
         }
 
         $this->eventManager = new EventManager();
-        $networkManagerFactory = $networkManagerFactory ?? new NetworkManagerFactoryImpl(
-            $this->clientConfig->getRequestBodySizeLimitBytes()
-        );
+        $networkManagerFactory = $networkManagerFactory ?? new NetworkManagerFactoryImpl();
         $this->networkManager = $networkManagerFactory->create(
             $siteCode,
-            $this->clientConfig->getEnvironment(),
-            $this->clientConfig->getDefaultTimeoutMillisecond(),
+            $this->clientConfig,
             $kameleoonWorkDir,
             new AccessTokenSourceFactoryImpl(
                 $this->clientConfig->getClientId(),
                 $this->clientConfig->getClientSecret(),
                 $kameleoonWorkDir
             ),
-            $this->clientConfig->getNetworkDomain(),
             $this->eventManager
         );
         $this->trackingManager = new TrackingManagerImpl(

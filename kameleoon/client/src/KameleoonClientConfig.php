@@ -27,6 +27,7 @@ class KameleoonClientConfig
     private ?string $environment;
     private ?string $networkDomain;
     private int $requestBodySizeLimitBytes;
+    private ?string $proxy;
 
     public function __construct(
         string $clientId,
@@ -38,7 +39,8 @@ class KameleoonClientConfig
         ?CookieOptions $cookieOptions = null,
         ?string $environment = null,
         ?string $networkDomain = null,
-        int $requestBodySizeLimitBytes = self::REQUEST_BODY_SIZE_LIMIT
+        int $requestBodySizeLimitBytes = self::REQUEST_BODY_SIZE_LIMIT,
+        ?string $proxy = null
     ) {
         if (empty($clientId)) {
             throw new ConfigCredentialsInvalid("Client ID is not specified or empty");
@@ -91,6 +93,7 @@ class KameleoonClientConfig
         }
         $this->environment = $environment;
         $this->networkDomain = Domain::validateNetworkDomain($networkDomain);
+        $this->proxy = ($proxy === null || $proxy === "") ? null : $proxy;
     }
 
     public function getClientId(): string
@@ -143,6 +146,11 @@ class KameleoonClientConfig
         return $this->requestBodySizeLimitBytes;
     }
 
+    public function getProxy(): ?string
+    {
+        return $this->proxy;
+    }
+
     public static function readFromFile(string $filePath)
     {
         $kameleoonConfigJson = array();
@@ -160,7 +168,8 @@ class KameleoonClientConfig
             CookieOptions::readFromArray($kameleoonConfigJson["cookie_options"] ?? null),
             $kameleoonConfigJson["environment"] ?? null,
             $kameleoonConfigJson["network_domain"] ?? null,
-            $kameleoonConfigJson["request_body_size_limit_bytes"] ?? self::REQUEST_BODY_SIZE_LIMIT
+            $kameleoonConfigJson["request_body_size_limit_bytes"] ?? self::REQUEST_BODY_SIZE_LIMIT,
+            $kameleoonConfigJson["proxy"] ?? null
         );
     }
 
@@ -173,12 +182,17 @@ class KameleoonClientConfig
         return new CookieOptions($topLevelDomain, $secure, $httpOnly, $sameSite);
     }
 
+    private static function maskProxy(?string $proxy): ?string
+    {
+        return $proxy === null ? null : '[configured]';
+    }
+
     public function __toString()
     {
         return sprintf(
             "KameleoonClientConfig{kameleoonWorkDir:'%s',refreshInterval:%s,defaultTimeout:%s,
                 requestBodySizeLimitBytes:%s,environment:'%s', clientId:'%s',clientSecret:'%s',
-                networkDomain:'%s',cookieOptions:%s}",
+                networkDomain:'%s',proxy:'%s',cookieOptions:%s}",
             $this->kameleoonWorkDir,
             $this->refreshIntervalSecond,
             $this->defaultTimeoutMillisecond,
@@ -187,6 +201,7 @@ class KameleoonClientConfig
             StringHelper::secret($this->clientId),
             StringHelper::secret($this->clientSecret),
             $this->networkDomain,
+            self::maskProxy($this->proxy),
             $this->cookieOptions
         );
     }

@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.25.0 - 2026-10-07
+### Features
+* Added new [`proxy`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#additional-configuration) (`proxy`) configuration parameter to route all SDK HTTP requests through a forward proxy (e.g. `http://user:pass@proxy.internal:3128`). It applies both to synchronous requests made by the SDK and to the tracking requests sent by the cron job, so no `HTTPS_PROXY` environment variable is needed. When not set, the behaviour is unchanged and the curl proxy environment variables keep working.
+### Bug fixes
+* `requestBodySizeLimitBytes` (`request_body_size_limit_bytes`) is now applied when the client is created via `KameleoonClientFactory`; previously it was only honoured when `KameleoonClientImpl` was instantiated directly.
+
 ## 4.24.1 - 2026-09-11
 ### Bug fixes
 * The access token is now renewed 5 minutes before its expiration, so that requests sent by the cron job are no longer rejected with a token that expires while they wait to be sent.
