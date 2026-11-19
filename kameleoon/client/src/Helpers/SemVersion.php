@@ -45,23 +45,40 @@ class SemVersion
         return (float) sprintf('%d.%d', $this->major, $this->minor);
     }
 
+    /**
+     * Parses `major[.minor[.patch]]`, ignoring a pre-release (-) or build (+) suffix.
+     * Returns null if the string is invalid.
+     */
     public static function fromString(string $versionString): ?SemVersion
     {
         $versions = [0, 0, 0];
-        $versionParts = explode('.', $versionString);
-
-        for ($i = 0; $i < count($versions) && $i < count($versionParts); $i++) {
-            if (!ctype_digit($versionParts[$i])) {
-                // Replace with your logger if needed
-                error_log(sprintf(
-                    "Invalid version component, index: %d, value: '%s'",
-                    $i,
-                    $versionParts[$i]
-                ));
-                return null;
+        $index = 0;
+        $hasDigits = false;
+        $valid = true;
+        // Single pass without splitting, stops at pre-release (-) or build (+) suffix
+        for ($i = 0, $length = strlen($versionString); $i < $length; $i++) {
+            $c = $versionString[$i];
+            $digit = ord($c) - 48;
+            if ($digit >= 0 && $digit <= 9 && $versions[$index] <= intdiv(PHP_INT_MAX - $digit, 10)) {
+                $versions[$index] = $versions[$index] * 10 + $digit;
+                $hasDigits = true;
+            } elseif ($c === '.' && $hasDigits && $index < 2) {
+                $index++;
+                $hasDigits = false;
+            } else {
+                $valid = $c === '.' || $c === '-' || $c === '+';
+                break;
             }
-
-            $versions[$i] = (int) $versionParts[$i];
+        }
+        // Each parsed component must have at least one digit
+        if (!$valid || !$hasDigits) {
+            // Replace with your logger if needed
+            error_log(sprintf(
+                "Invalid version component, index: %d, version: '%s'",
+                $index,
+                $versionString
+            ));
+            return null;
         }
 
         return new SemVersion($versions[0], $versions[1], $versions[2]);

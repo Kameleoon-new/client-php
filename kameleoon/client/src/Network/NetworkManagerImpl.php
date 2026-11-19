@@ -210,7 +210,7 @@ class NetworkManagerImpl implements NetworkManager
                 $url .= $debugParams;
             }
         }
-        $headers = ["Content-Type" => "*/*"];
+        $headers = ["Content-Type" => "text/plain"];
         $request = new AsyncRequest($url, $headers, $lines, true);
         $this->makeAsyncCall($request);
     }
@@ -224,7 +224,7 @@ class NetworkManagerImpl implements NetworkManager
                 $url .= $debugParams;
             }
         }
-        $headers = ["Content-Type" => "*/*"];
+        $headers = ["Content-Type" => "text/plain"];
         $request = new SyncRequest(
             Request::POST,
             $url,

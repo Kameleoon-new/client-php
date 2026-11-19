@@ -15,6 +15,7 @@ class UrlProvider
     const GET_DATA_PATH = "/map/map";
     public const ACCESS_TOKEN_PATH = "/oauth/token";
     public const TEST_DATA_API_DOMAIN = "data.kameleoon.net";
+    public const TEST_AUTOMATION_API_DOMAIN = "api.kameleoon.net";
     public const DEFAULT_DATA_API_DOMAIN = "data.kameleoon.io";
     public const DEFAULT_EVENTS_DOMAIN = "events.kameleoon.eu";
     public const DEFAULT_CONFIGURATION_DOMAIN = "sdk-config.kameleoon.eu";
@@ -140,7 +141,6 @@ class UrlProvider
         bool $isUniqueIdentifier
     ): string {
         $qb = new QueryBuilder(
-            new QueryParam(QueryParams::SITE_CODE, $this->siteCode),
             new QueryParam($isUniqueIdentifier ? QueryParams::MAPPING_VALUE : QueryParams::VISITOR_CODE, $visitorCode),
             new QueryParam(QueryParams::MAX_NUMBER_PREVIOUS_VISITS, (string)$filter->previousVisitAmount),
             new QueryParam(QueryParams::VERSION, "0", false),
@@ -155,7 +155,8 @@ class UrlProvider
         self::addFlagParamIfRequired($qb, QueryParams::PAGE, $filter->pageViews);
         self::addFlagParamIfRequired($qb, QueryParams::PERSONALIZATION, $filter->personalization);
         self::addFlagParamIfRequired($qb, QueryParams::CBS, $filter->cbs);
-        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::VISITOR_DATA_PATH, $qb);
+        $query = "{$this->sdkSiteCodeQueryBase}&{$qb}";
+        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::VISITOR_DATA_PATH, $query);
     }
     private static function addFlagParamIfRequired(QueryBuilder $qb, string $paramName, bool $state): void
     {
@@ -166,11 +167,8 @@ class UrlProvider
 
     public function makeApiDataGetRequestUrl(string $key): string
     {
-        $qb = new QueryBuilder(
-            new QueryParam(QueryParams::SITE_CODE, $this->siteCode),
-            new QueryParam(QueryParams::KEY, $key),
-        );
-        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::GET_DATA_PATH, $qb);
+        $query = $this->sdkSiteCodeQueryBase . '&' . new QueryParam(QueryParams::KEY, $key);
+        return sprintf(self::DATA_API_URL_FORMAT, $this->dataApiDomain, self::GET_DATA_PATH, $query);
     }
 
     public function makeConfigurationUrl(?string $environment = null): string

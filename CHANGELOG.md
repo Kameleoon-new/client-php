@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.26.0 - 2026-11-19
+### Features
+* Added support for version strings containing pre-release and build metadata, in accordance with [Semantic Versioning](https://semver.org/#semantic-versioning-200). Pre-release and build metadata components are currently ignored, and the version is normalized to `major.minor.patch`.
+
 ## 4.25.0 - 2026-10-07
 ### Features
 * Added new [`proxy`](https://developers.kameleoon.com/feature-management-and-experimentation/web-sdks/php-sdk/#additional-configuration) (`proxy`) configuration parameter to route all SDK HTTP requests through a forward proxy (e.g. `http://user:pass@proxy.internal:3128`). It applies both to synchronous requests made by the SDK and to the tracking requests sent by the cron job, so no `HTTPS_PROXY` environment variable is needed. When not set, the behaviour is unchanged and the curl proxy environment variables keep working.
