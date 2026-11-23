@@ -28,20 +28,11 @@ class NumberCondition extends TargetingCondition
         if (!(is_int($value) || is_float($value))) {
             return false;
         }
-        switch ($this->operator) {
-            case TargetingOperator::EQUAL:
-                return $value == $this->conditionValue;
-
-            case TargetingOperator::GREATER:
-                return $value > $this->conditionValue;
-
-            case TargetingOperator::LOWER:
-                return $value < $this->conditionValue;
-
-            default:
-                KameleoonLogger::error("Unexpected comparing operation for '%s' condition: '%s'",
-                    $this->getType(), $this->operator);
-                return false;
+        if (!TargetingOperator::isComparison($this->operator)) {
+            KameleoonLogger::error("Unexpected comparing operation for '%s' condition: '%s'",
+                $this->getType(), $this->operator);
+            return false;
         }
+        return TargetingOperator::compare($this->operator, $value, $this->conditionValue);
     }
 }

@@ -44,23 +44,19 @@ class VersionCondition extends TargetingCondition
             return false;
         }
 
-        switch ($this->versionMatchType) {
-            case TargetingOperator::EQUAL:
-                return $this->cachedVersionCondition->compareTo($versionCompare) === 0;
-
-            case TargetingOperator::GREATER:
-                return $this->cachedVersionCondition->compareTo($versionCompare) < 0;
-
-            case TargetingOperator::LOWER:
-                return $this->cachedVersionCondition->compareTo($versionCompare) > 0;
-
-            default:
-                KameleoonLogger::error(
-                    "Unexpected comparing operation for %s condition: %s",
-                    $this->getType(),
-                    (string) $this->versionMatchType
-                );
-                return false;
+        if (!TargetingOperator::isComparison($this->versionMatchType)) {
+            KameleoonLogger::error(
+                "Unexpected comparing operation for %s condition: %s",
+                $this->getType(),
+                (string) $this->versionMatchType
+            );
+            return false;
         }
+        // The sign of comparing the versions is compared with zero
+        return TargetingOperator::compare(
+            $this->versionMatchType,
+            $versionCompare->compareTo($this->cachedVersionCondition),
+            0
+        );
     }
 }

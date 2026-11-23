@@ -52,17 +52,11 @@ class BrowserCondition extends TargetingCondition
         }
         $versionNumber = $semVersion->toFloat();
 
-        switch ($this->operator) {
-            case TargetingOperator::EQUAL:
-                return $browser->getVersion() == $versionNumber;
-            case TargetingOperator::GREATER:
-                return $browser->getVersion() > $versionNumber;
-            case TargetingOperator::LOWER:
-                return $browser->getVersion() < $versionNumber;
-            default:
-                KameleoonLogger::error("Unexpected comparing operation for 'Browser' condition: '%s'", $this->operator);
-                return false;
+        if (!TargetingOperator::isComparison($this->operator)) {
+            KameleoonLogger::error("Unexpected comparing operation for 'Browser' condition: '%s'", $this->operator);
+            return false;
         }
+        return TargetingOperator::compare($this->operator, $browser->getVersion(), $versionNumber);
     }
 
     private function browserTypeFromBrowser(string $browserType): int

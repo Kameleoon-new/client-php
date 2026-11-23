@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kameleoon\Targeting\Condition;
 
 use Kameleoon\Helpers\StringHelper;
+use Kameleoon\Logging\KameleoonLogger;
 
 class CustomDatum extends TargetingCondition
 {
@@ -15,6 +16,8 @@ class CustomDatum extends TargetingCondition
     private string $operator;
 
     private ?string $value;
+
+    private ?array $amongValues = null; // Parsed from value on first use
 
     public function getIndex()
     {
@@ -52,6 +55,9 @@ class CustomDatum extends TargetingCondition
 
     private function checkTargeting(array $customDataValues): bool
     {
+        if (TargetingOperator::isComparison($this->operator)) {
+            return $this->compareNumberValues($this->value, $customDataValues);
+        }
         $targeting = false;
         switch ($this->operator) {
             case TargetingOperator::CONTAINS:
@@ -78,11 +84,6 @@ class CustomDatum extends TargetingCondition
                     }
                 );
                 break;
-            case TargetingOperator::LOWER:
-            case TargetingOperator::EQUAL:
-            case TargetingOperator::GREATER:
-                $targeting = $this->compareNumberValues($this->value, $customDataValues);
-                break;
             case TargetingOperator::IS_TRUE:
                 $targeting = $this->checkForMatch(
                     $customDataValues,
@@ -100,23 +101,25 @@ class CustomDatum extends TargetingCondition
                 );
                 break;
             case TargetingOperator::AMONG_VALUES:
-                $conditionValues = array_reduce(
-                    json_decode($this->value),
-                    function ($res, $key) {
-                        $res[StringHelper::strval($key)] = true;
-                        return $res;
-                    },
-                    []
-                );
-
+                if ($this->amongValues === null) {
+                    $this->amongValues = self::parseAmongValues($this->value);
+                }
                 $targeting = $this->checkForMatch(
                     $customDataValues,
-                    function ($value) use ($conditionValues) {
-                        return isset($conditionValues[$value]);
+                    function ($value) {
+                        return in_array($value, $this->amongValues, true);
                     }
                 );
                 break;
+            case TargetingOperator::UNDEFINED:
+                // The custom data is defined, so the condition is not met
+                break;
             default:
+                KameleoonLogger::error(
+                    "Unexpected comparing operation for %s condition: %s",
+                    self::TYPE,
+                    $this->operator
+                );
                 break;
         }
         return $targeting;
@@ -132,36 +135,31 @@ class CustomDatum extends TargetingCondition
         return false;
     }
 
-    private function compareNumberValues(string $conditionValue, array $customDataValues): bool
+    private function compareNumberValues(?string $conditionValue, array $customDataValues): bool
     {
-        $number = floatval($conditionValue);
-        if (!is_nan($number)) {
-            switch ($this->operator) {
-                case TargetingOperator::LOWER:
-                    return $this->checkForMatch(
-                        $customDataValues,
-                        function ($value) use ($number) {
-                            return floatval($value) < $number;
-                        }
-                    );
-
-                case TargetingOperator::EQUAL:
-                    return $this->checkForMatch(
-                        $customDataValues,
-                        function ($value) use ($number) {
-                            return floatval($value) == $number;
-                        }
-                    );
-
-                case TargetingOperator::GREATER:
-                    return $this->checkForMatch(
-                        $customDataValues,
-                        function ($value) use ($number) {
-                            return floatval($value) > $number;
-                        }
-                    );
+        $number = self::parseNumber($conditionValue);
+        // A non-numeric value is NaN, which never matches, so it does not hide the other values
+        return $this->checkForMatch(
+            $customDataValues,
+            function ($value) use ($number) {
+                return TargetingOperator::compare($this->operator, self::parseNumber($value), $number);
             }
+        );
+    }
+
+    private static function parseNumber($value): float
+    {
+        // floatval is not enough: it returns 0 for a non-numeric value
+        if (is_string($value)) {
+            // is_numeric accepts trailing whitespace only since PHP 8
+            $value = trim($value);
         }
-        return false;
+        return is_numeric($value) ? floatval($value) : NAN;
+    }
+
+    private static function parseAmongValues(?string $value): array
+    {
+        $values = json_decode($value ?? "");
+        return is_array($values) ? array_map([StringHelper::class, 'strval'], $values) : [];
     }
 }

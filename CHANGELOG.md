@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 4.27.0 - 2026-11-23
+### Features
+* Added the "greater than or equal to" (`>=`) and "less than or equal to" (`<=`) operators to the following targeting conditions:
+  - App version
+  - SDK type
+  - Browser
+  - Custom data (number)
+  - Number of page views
+  - Total number of visits
+  - Number of visits today
+  - Elapsed time since first visit
+  - Elapsed time since last visit
+
+  These operators will be available in the Kameleoon app with the platform release planned for December 2026.
+### Bug fixes
+* Fixed the Custom data condition with a number operator treating a non-numeric value as `0` (for example, `"abc"` matched `< 10`). A non-numeric custom data value or condition value no longer matches.
+
 ## 4.26.0 - 2026-11-19
 ### Features
 * Added support for version strings containing pre-release and build metadata, in accordance with [Semantic Versioning](https://semver.org/#semantic-versioning-200). Pre-release and build metadata components are currently ignored, and the version is normalized to `major.minor.patch`.
